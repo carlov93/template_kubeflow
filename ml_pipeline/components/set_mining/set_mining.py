@@ -11,7 +11,7 @@ from ml_pipeline.components.set_mining.steps import (
 from ml_pipeline.util.util import timed, pipeline_logging_config
 from ml_pipeline.util.exceptions import NoDataToProcess
 
-logger = logging.getLogger("smart_diagnosis")
+logger = logging.getLogger("set_mining")
 
 
 @timed

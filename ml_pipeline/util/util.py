@@ -132,7 +132,7 @@ def convert_dec_to_hex(decimal_num):
 
 def load_logger(config: Dict):
     # LOGGING
-    logger = logging.getLogger("smart_diagnosis")
+    logger = logging.getLogger("set_mining")
     # create console handler, set level and add to logger
     ch = logging.StreamHandler()
     logger.addHandler(ch)

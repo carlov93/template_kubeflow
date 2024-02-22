@@ -10,7 +10,7 @@ from ml_pipeline.util.data_class import KnownPattern, EventHistory, MetaData
 from ml_pipeline.util.util import check_columns, load_data_s3, upload_data_s3, get_files_in_s3_directory
 from ml_pipeline.util.util import timed
 
-logger = logging.getLogger("smart_diagnosis")
+logger = logging.getLogger("set_ming")
 
 
 @timed
