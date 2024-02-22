@@ -1,0 +1,78 @@
+name: Deploy ML Pipeline
+
+on:
+  push:
+    branches:
+      - "develop"
+    paths-ignore:
+      - "**.md"
+      - "notebooks/"
+
+env:
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+jobs:
+  deploy:
+    name: Deploy Pipeline to TEST Environment
+    runs-on: [ self-hosted, linux, x64, project_name-python38]
+    environment:
+      name: test
+      url: ${{ steps.pipeline.outputs.run_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set Environment
+        uses: ./..github/actions/set-environment
+        with:
+          cache-venv-key: venv-run-tests
+
+      - name: Update Individual Run
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ .github.token }}
+        run: |
+          source .venv/bin/activate
+          python3.8 -m ml_pipeline.pipeline --type update
+
+      - name: Set URL
+        id: pipeline
+        run: |
+          echo "::set-output name=run_url::${{ env.RUN_URL }}"
+
+  upload_artifacts:
+    name: Upload Glue Scripts to S3
+    runs-on: [ self-hosted, linux, x64, project_name-python38]
+    steps:
+      - name: Configure AWS Credentials # Setup AWS Credentials so that the Deploy step can sync an s3 location
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::<aws_account_id>:role/<role_name>
+          aws-region: eu-west-1
+          role-skip-session-tagging: true
+          role-duration-seconds: 1200
+
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set Environment
+        uses: ./..github/actions/set-environment
+        with:
+          cache-venv-key: venv-run-tests
+
+      - name: Upload glue scripts to S3
+        shell: bash
+        run: |
+          if [ -d .git ]; then rm -Rf .git; fi
+          source .venv/bin/activate
+          python helpers/upload_pipeline_artifacts_to_s3.py
+
+      - name: Upload empty result files with current column used in "parallel-for pipeline runs"
+        shell: bash
+        run: |
+          if [ -d .git ]; then rm -Rf .git; fi
+          source .venv/bin/activate
+          python helpers/upload_result_files.py
